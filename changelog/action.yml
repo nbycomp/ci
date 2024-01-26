@@ -9,28 +9,35 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: ory/ci/checkout@master
+    - uses: actions/checkout@v4
       with:
         token: ${{ inputs.token }}
         fetch-depth: 0
-    - name: set up the Git client
+    - name: Set up the Git client
       run: |
-        git config --global user.email "60093411+ory-bot@users.noreply.github.com"
-        git config --global user.name "ory-bot"
+        git config --global user.name "Dale Concourse"
+        git config --global user.email "bot@nearbycomputing.com"
       shell: bash
-    - name: create the changelog
+    - name: Create the changelog
       run: |
-        curl -sSfL https://raw.githubusercontent.com/ory/ci/master/changelog/create_changelog.sh | bash
+        curl -sSfL https://raw.githubusercontent.com/nbycomp/ory-github-actions/nbycomp/changelog/create_changelog.sh | bash
       shell: bash
-    - name: commit the changes
-      if: ${{ github.ref_name == 'master' || github.ref_type == 'tag' }}
+    - name: Check if CHANGELOG.md was modified
+      id: check_changelog
+      run: |
+        if git status --short | grep -q 'CHANGELOG.md'; then
+          echo "CHANGELOG modified" && echo "CHANGELOG_MODIFIED=true" >> $GITHUB_OUTPUT;
+        fi
+      shell: bash
+    - name: Commit the changes
+      if: ${{ steps.check_changelog.outputs.CHANGELOG_MODIFIED == 'true' }}
       env:
-        GITHUB_TOKEN: ${{ inputs.token || github.token }}
+        GITHUB_TOKEN: ${{ inputs.token }}
       run: |
         branch="$(date +%s)"
         git checkout -b "$branch" || true
         git add CHANGELOG.md || true
-        git commit -m "autogen(docs): regenerate and update changelog" -m "[skip ci]" || true
+        git commit -m "ci(docs): Update changelog" || true
         git pull origin master --rebase || true
         git push origin HEAD:master || true
       shell: bash
