@@ -39,5 +39,5 @@ runs:
         git add CHANGELOG.md || true
         git commit -m "ci(docs): Update changelog" || true
         git pull origin master --rebase || true
-        git push origin HEAD:master || true
+        git push origin HEAD:master
       shell: bash
