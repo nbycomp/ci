@@ -15,8 +15,8 @@ runs:
         fetch-depth: 0
     - name: Set up the Git client
       run: |
-        git config --global user.name "Dale Concourse"
-        git config --global user.email "bot@nearbycomputing.com"
+        git config --global user.name 'Github Actions'
+        git config --global user.email 'github-actions@github.com'
       shell: bash
     - name: Create the changelog
       run: |
