@@ -5,6 +5,9 @@ inputs:
     description: Personal access token
     default: ${{ github.token }}
     required: false
+  ssh-private-key:
+    description: Private SSH key for authentication
+    required: true
 
 runs:
   using: "composite"
@@ -13,10 +16,15 @@ runs:
       with:
         token: ${{ inputs.token }}
         fetch-depth: 0
+    - name: Install SSH Client 🔑
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ inputs.ssh-private-key }}
     - name: Set up the Git client
       run: |
         git config --global user.name 'Github Actions'
         git config --global user.email 'github-actions@github.com'
+        git remote set-url origin git@github.com:${GITHUB_REPOSITORY}.git
       shell: bash
     - name: Create the changelog
       run: |
@@ -31,8 +39,6 @@ runs:
       shell: bash
     - name: Commit the changes
       if: ${{ steps.check_changelog.outputs.CHANGELOG_MODIFIED == 'true' }}
-      env:
-        GITHUB_TOKEN: ${{ inputs.token }}
       run: |
         branch="$(date +%s)"
         git checkout -b "$branch" || true
