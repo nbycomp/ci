@@ -5,6 +5,9 @@ inputs:
     description: Personal access token
     default: ${{ github.token }}
     required: false
+  component:
+    description: The name of the nearbyOne component executing this action
+    required: true
 
 runs:
   using: "composite"
@@ -22,15 +25,35 @@ runs:
       run: |
         curl -sSfL https://raw.githubusercontent.com/nbycomp/ory-github-actions/nbycomp-actions/changelog/create_changelog.sh | bash
       shell: bash
-    - name: commit the changes
+    - name: Get the latest SHA from the component repository
+      id: get_sha
+      run: |
+        echo "::set-output name=LATEST_COMPONENT_SHA::$(git rev-parse --short HEAD)"
+      shell: bash
+    - name: Clone the meta repository
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+      run: |
+        git clone https://github.com/nbycomp/meta.git meta
+        cd meta
+        git checkout master
+      shell: bash
+    - name: Create a PR with the changes in meta repository
       if: ${{ github.ref_name == 'master' || github.ref_type == 'tag' }}
       env:
-        GITHUB_TOKEN: ${{ inputs.token || github.token }}
+        GITHUB_TOKEN: ${{ inputs.token }}
+        COMPONENT: ${{ inputs.component}}
       run: |
-        branch="$(date +%s)"
-        git checkout -b "$branch" || true
-        git add CHANGELOG.md || true
-        git commit -m "autogen(docs): regenerate and update changelog" -m "[skip ci]" || true
-        git pull origin master --rebase || true
-        git push origin HEAD:master || true
+        cd meta
+        branch=auto-update/$(date -I)-${{ steps.get_sha.outputs.LATEST_COMPONENT_SHA }}
+        git checkout -b "$branch"
+        cp ../CHANGELOG.md ./changelogs/CHANGELOG.${COMPONENT}.md
+        git add changelogs/CHANGELOG.${COMPONENT}.md
+        git commit -m "autogen(docs): regenerate and update changelog" -m "[skip ci]"
+        git push origin "$branch"
+        gh pr create \
+        --title "autogen(docs): Update ${COMPONENT} Changelog" \
+        --body "This pull request updates the changelog based on recent changes in the ${COMPONENT} component from ${{ github.repository }} repository." \
+        --base master \
+        --head "$branch"
       shell: bash
