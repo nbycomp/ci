@@ -17,7 +17,6 @@ git fetch origin +refs/tags/*:refs/tags/*
 
 echo
 echo "INSTALL TOOLS ..."
-npm ci
 rm -rf changelog
 git clone https://github.com/ory/changelog.git
 (cd changelog && npm ci)
