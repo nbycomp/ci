@@ -6,12 +6,6 @@ set -e
 # This needs to happen separately on CI.
 
 echo
-echo "VERIFY THAT THE CHANGELOG IS NOT ALREADY GENERATED ..."
-if [[ "$(git show -s --format=%B | head -n 1)" == "autogen"* ]]; then
-	exit 0
-fi
-
-echo
 echo "FETCH GIT METADATA ..."
 git fetch origin +refs/tags/*:refs/tags/*
 
