@@ -6,25 +6,16 @@ set -e
 # This needs to happen separately on CI.
 
 echo
-echo "VERIFY THAT THE CHANGELOG IS NOT ALREADY GENERATED ..."
-if [[ "$(git show -s --format=%B | head -n 1)" == "autogen"* ]]; then
-	exit 0
-fi
-
-echo
 echo "FETCH GIT METADATA ..."
 git fetch origin +refs/tags/*:refs/tags/*
 
 echo
-echo "INSTALL TOOLS ..."
-npm ci
-rm -rf changelog
-git clone https://github.com/ory/changelog.git
-(cd changelog && npm ci)
+echo "INSTALL CHANGELOG GENERATOR ..."
+npm install -g conventional-changelog-cli
 
 echo
 echo "GENERATE THE CHANGELOG ..."
-npm exec -- conventional-changelog-cli --config "changelog/index.js" -r 0 -u -o CHANGELOG.md
+npm exec -- conventional-changelog-cli -p conventionalCommits -r 0 -o CHANGELOG.md
 npm exec -- doctoc CHANGELOG.md
 sed -i "s/\*\*Table of Contents.*/**Table of Contents**/" CHANGELOG.md
 sed -i "s/\*This Change Log was.*/This Change Log was automatically generated/" CHANGELOG.md
@@ -37,7 +28,3 @@ echo "FORMAT THE CHANGELOG ..."
 npm exec -- prettier --write CHANGELOG.md
 npm exec -- prettier --write CHANGELOG.md
 npm exec -- prettier --check CHANGELOG.md
-
-echo
-echo "CLEANUP ..."
-rm -rf changelog/
